@@ -115,6 +115,10 @@ services:
       # 기본값: 10분 주기
       CRON_SCHEDULE: ${CRON_SCHEDULE:-*/10 * * * *}
 
+      # 병렬 처리 설정
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-10}
+      BROWSER_POOL_SIZE: ${BROWSER_POOL_SIZE:-3}
+
     depends_on:
       db:
         condition: service_healthy
@@ -125,7 +129,7 @@ services:
       - /app/node_modules
 
     # docker-compose에서 실제로 적용되는 메모리 제한
-    mem_limit: 1g
+    # mem_limit: 1g
 
     # 로컬에선 자동 재시작 비추천
     # restart: unless-stopped ❌

@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Next.js 웹 앱
@@ -20,7 +20,7 @@ services:
     depends_on:
       - worker
 
-  # 크론 워커 (모니터링)
+  # 크론 워커 (모니터링) - 병렬 처리 지원
   worker:
     build:
       context: .
@@ -30,8 +30,13 @@ services:
       - KAKAO_CLIENT_ID=${KAKAO_CLIENT_ID}
       - KAKAO_CLIENT_SECRET=${KAKAO_CLIENT_SECRET}
       - CRON_SCHEDULE=${CRON_SCHEDULE:-*/10 * * * *}
+      # 병렬 처리 설정
+      - WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-10}
+      - BROWSER_POOL_SIZE=${BROWSER_POOL_SIZE:-3}
     restart: unless-stopped
     deploy:
       resources:
         limits:
-          memory: 1G
+          memory: 4G # 병렬 처리를 위해 4GB로 증가
+        reservations:
+          memory: 2G # 최소 2GB 보장
