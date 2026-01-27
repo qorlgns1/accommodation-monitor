@@ -82,7 +82,7 @@ http://localhost:3000
 최초 실행 시 또는 `schema.prisma` 변경 후 반드시 실행
 
 ```bash
-npm run db:push:local
+npm run local:docker:db:push
 ```
 
 - 테이블 / 인덱스 / 관계 생성
@@ -106,7 +106,7 @@ docker compose -f docker-compose.local.yml up
 | 빈 데이터베이스 생성 | ✅ 자동                 |
 | 기존 DB 재사용       | ✅ 자동                 |
 | Prisma 테이블 생성   | ❌ 수동                 |
-| Prisma 명령          | `npm run db:push:local` |
+| Prisma 명령          | `npm run local:docker:db:push` |
 
 ### 🧠 설계 의도
 
@@ -186,9 +186,10 @@ accommodation-monitor-web/
 ```bash
 npm run dev               # Next.js 개발 서버
 npm run cron              # 워커 실행
-npm run db:push           # Prisma db push (Node 환경)
-npm run db:push:local     # Prisma db push (Docker 환경)
-npm run db:studio:local   # Prisma Studio
+npm run db:push                # Prisma db push (Node 환경)
+npm run db:studio              # Prisma Studio (Node 환경)
+npm run local:docker:db:push   # Prisma db push (Docker 환경)
+npm run local:docker:db:studio # Prisma Studio (Docker 환경)
 ```
 
 ---
