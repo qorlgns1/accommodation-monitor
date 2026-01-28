@@ -24,6 +24,15 @@ interface AccommodationWithUser {
 }
 
 // ============================================
+// 상태 관리
+// ============================================
+let isRunning = false;
+
+export function isProcessing(): boolean {
+  return isRunning;
+}
+
+// ============================================
 // 단일 숙소 처리
 // ============================================
 async function processAccommodation(
@@ -191,8 +200,6 @@ async function getActiveAccommodations(): Promise<AccommodationWithUser[]> {
 // ============================================
 // 메인 체크 함수
 // ============================================
-let isRunning = false;
-
 export async function checkAllAccommodations(): Promise<void> {
   if (isRunning) {
     console.log("⚠️  이전 작업이 아직 실행 중입니다. 스킵합니다.");
@@ -214,7 +221,7 @@ export async function checkAllAccommodations(): Promise<void> {
 
     if (accommodations.length === 0) {
       console.log("체크할 숙소가 없습니다.\n");
-      return;
+      return; // finally에서 isRunning = false 처리됨
     }
 
     const limit = createLimiter(CRON_CONFIG.concurrency);

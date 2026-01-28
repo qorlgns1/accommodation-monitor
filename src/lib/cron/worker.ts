@@ -2,8 +2,10 @@
 
 import cron from "node-cron";
 import prisma from "@/lib/prisma";
-import { checkAllAccommodations } from "./processor";
+import { checkAllAccommodations, isProcessing } from "./processor";
 import { CRON_CONFIG, logConfig } from "./config";
+
+const SHUTDOWN_TIMEOUT = 60000; // 최대 60초 대기
 
 // ============================================
 // 시작 로그
@@ -22,16 +24,48 @@ setTimeout(() => {
 // ============================================
 // 크론 스케줄 등록
 // ============================================
-cron.schedule(CRON_CONFIG.schedule, checkAllAccommodations);
+const scheduledTask = cron.schedule(
+  CRON_CONFIG.schedule,
+  checkAllAccommodations,
+);
 
 // ============================================
 // 프로세스 종료 핸들링
 // ============================================
-async function gracefulShutdown(signal: string): Promise<void> {
-  console.log(`\n🛑 ${signal} 수신. 워커 종료 중...`);
+let isShuttingDown = false;
+
+async function gracefulShutdown(): Promise<void> {
+  if (isShuttingDown) return;
+  isShuttingDown = true;
+
+  console.log(`\n🛑 종료 신호 수신. 워커 종료 중...`);
+
+  // 새로운 작업 스케줄링 중지
+  scheduledTask.stop();
+  console.log("   - 크론 스케줄 중지됨");
+
+  // 진행 중인 작업 완료 대기
+  if (isProcessing()) {
+    console.log("   - 진행 중인 작업 완료 대기 중...");
+
+    const startWait = Date.now();
+    while (isProcessing() && Date.now() - startWait < SHUTDOWN_TIMEOUT) {
+      await new Promise((resolve) => setTimeout(resolve, 1000));
+    }
+
+    if (isProcessing()) {
+      console.log("   ⚠️ 타임아웃: 작업 완료를 기다리지 못하고 종료합니다.");
+    } else {
+      console.log("   - 모든 작업 완료됨");
+    }
+  }
+
   await prisma.$disconnect();
+  console.log("   - DB 연결 해제됨");
+  console.log("👋 워커 종료 완료\n");
+
   process.exit(0);
 }
 
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
+process.on("SIGINT", gracefulShutdown);
+process.on("SIGTERM", gracefulShutdown);
