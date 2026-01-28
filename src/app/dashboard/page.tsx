@@ -5,6 +5,7 @@ import Link from "next/link";
 import prisma from "@/lib/prisma";
 import { formatDateTime } from "@/lib/utils";
 import { LogoutButton } from "./logout-button";
+import { KakaoAlertBanner } from "./kakao-alert-banner";
 
 export default async function DashboardPage() {
   const session = await getServerSession(authOptions);
@@ -12,6 +13,16 @@ export default async function DashboardPage() {
   if (!session?.user) {
     redirect("/login");
   }
+
+  // 사용자 정보 조회 (카카오 토큰 여부 확인)
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      kakaoAccessToken: true,
+    },
+  });
+
+  const hasKakaoToken = !!user?.kakaoAccessToken;
 
   // 사용자의 숙소 목록 조회
   const accommodations = await prisma.accommodation.findMany({
@@ -55,6 +66,9 @@ export default async function DashboardPage() {
       </header>
 
       <main className="max-w-7xl mx-auto px-4 py-8">
+        {/* 카카오톡 알림 안내 배너 */}
+        {!hasKakaoToken && <KakaoAlertBanner />}
+
         {/* 요약 카드 */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <div className="bg-white rounded-xl p-6 shadow-sm">
