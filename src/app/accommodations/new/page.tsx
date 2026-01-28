@@ -1,35 +1,83 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import {
+  parseAccommodationUrl,
+  type ParsedAccommodationUrl,
+} from "@/lib/url-parser";
 
 export default function NewAccommodationPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [parsedInfo, setParsedInfo] = useState<ParsedAccommodationUrl | null>(
+    null,
+  );
+
+  // 폼 상태
+  const [url, setUrl] = useState("");
+  const [name, setName] = useState("");
+  const [checkIn, setCheckIn] = useState("");
+  const [checkOut, setCheckOut] = useState("");
+  const [adults, setAdults] = useState(2);
+
+  // URL 변경 시 자동 파싱
+  useEffect(() => {
+    if (!url) {
+      setParsedInfo(null);
+      return;
+    }
+
+    // 디바운스: 타이핑 완료 후 파싱
+    const timer = setTimeout(() => {
+      const parsed = parseAccommodationUrl(url);
+      setParsedInfo(parsed);
+
+      // 파싱된 값으로 폼 자동 채우기
+      if (parsed.platform) {
+        if (parsed.checkIn && !checkIn) setCheckIn(parsed.checkIn);
+        if (parsed.checkOut && !checkOut) setCheckOut(parsed.checkOut);
+        if (parsed.adults && adults === 2) setAdults(parsed.adults);
+        if (parsed.name && !name) setName(parsed.name);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [url]);
+
+  // "파싱된 정보로 채우기" 버튼
+  function applyParsedInfo() {
+    if (!parsedInfo) return;
+
+    if (parsedInfo.checkIn) setCheckIn(parsedInfo.checkIn);
+    if (parsedInfo.checkOut) setCheckOut(parsedInfo.checkOut);
+    if (parsedInfo.adults) setAdults(parsedInfo.adults);
+    if (parsedInfo.name) setName(parsedInfo.name);
+  }
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setLoading(true);
     setError("");
 
-    const formData = new FormData(e.currentTarget);
-
     // URL에서 플랫폼 자동 감지
-    const url = formData.get("url") as string;
     let platform = "AIRBNB";
     if (url.includes("agoda")) {
       platform = "AGODA";
     }
 
+    // 기본 URL 사용 (쿼리 파라미터 제거된 버전)
+    const baseUrl = parsedInfo?.baseUrl || url;
+
     const data = {
-      name: formData.get("name"),
+      name,
       platform,
-      url,
-      checkIn: formData.get("checkIn"),
-      checkOut: formData.get("checkOut"),
-      adults: parseInt(formData.get("adults") as string) || 2,
+      url: baseUrl,
+      checkIn,
+      checkOut,
+      adults,
     };
 
     try {
@@ -74,23 +122,7 @@ export default function NewAccommodationPage() {
           )}
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
-              <label
-                htmlFor="name"
-                className="block text-sm font-medium text-gray-700 mb-1"
-              >
-                숙소 이름 *
-              </label>
-              <input
-                type="text"
-                id="name"
-                name="name"
-                required
-                placeholder="예: 그린델발트 샬레"
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
-              />
-            </div>
-
+            {/* URL 입력 */}
             <div>
               <label
                 htmlFor="url"
@@ -103,14 +135,67 @@ export default function NewAccommodationPage() {
                 id="url"
                 name="url"
                 required
-                placeholder="https://www.airbnb.co.kr/rooms/12345678"
+                value={url}
+                onChange={(e) => setUrl(e.target.value)}
+                placeholder="https://www.airbnb.co.kr/rooms/12345678?check_in=..."
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
               <p className="text-xs text-gray-500 mt-1">
-                Airbnb 또는 Agoda 숙소 페이지 URL을 입력하세요
+                Airbnb 또는 Agoda 숙소 페이지 URL을 붙여넣으세요. 날짜와 인원이
+                자동으로 입력됩니다.
               </p>
+
+              {/* 파싱 결과 표시 */}
+              {parsedInfo?.platform && (
+                <div className="mt-3 p-3 bg-blue-50 rounded-lg">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-sm font-medium text-blue-800">
+                      🔍 URL에서 정보를 찾았습니다
+                    </span>
+                    <button
+                      type="button"
+                      onClick={applyParsedInfo}
+                      className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700 transition-colors"
+                    >
+                      모두 적용
+                    </button>
+                  </div>
+                  <div className="text-xs text-blue-700 space-y-1">
+                    <p>• 플랫폼: {parsedInfo.platform}</p>
+                    {parsedInfo.name && <p>• 숙소명: {parsedInfo.name}</p>}
+                    {parsedInfo.checkIn && (
+                      <p>• 체크인: {parsedInfo.checkIn}</p>
+                    )}
+                    {parsedInfo.checkOut && (
+                      <p>• 체크아웃: {parsedInfo.checkOut}</p>
+                    )}
+                    {parsedInfo.adults && <p>• 인원: {parsedInfo.adults}명</p>}
+                  </div>
+                </div>
+              )}
             </div>
 
+            {/* 숙소 이름 */}
+            <div>
+              <label
+                htmlFor="name"
+                className="block text-sm font-medium text-gray-700 mb-1"
+              >
+                숙소 이름 *
+              </label>
+              <input
+                type="text"
+                id="name"
+                name="name"
+                required
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="예: 그린델발트 샬레"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+              />
+            </div>
+
+            {/* 날짜 선택 */}
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label
@@ -124,6 +209,8 @@ export default function NewAccommodationPage() {
                   id="checkIn"
                   name="checkIn"
                   required
+                  value={checkIn}
+                  onChange={(e) => setCheckIn(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
@@ -139,11 +226,14 @@ export default function NewAccommodationPage() {
                   id="checkOut"
                   name="checkOut"
                   required
+                  value={checkOut}
+                  onChange={(e) => setCheckOut(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
                 />
               </div>
             </div>
 
+            {/* 인원 */}
             <div>
               <label
                 htmlFor="adults"
@@ -157,11 +247,13 @@ export default function NewAccommodationPage() {
                 name="adults"
                 min="1"
                 max="20"
-                defaultValue="2"
+                value={adults}
+                onChange={(e) => setAdults(parseInt(e.target.value) || 2)}
                 className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
               />
             </div>
 
+            {/* 버튼 */}
             <div className="flex gap-4">
               <button
                 type="submit"
