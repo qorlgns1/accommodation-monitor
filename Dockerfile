@@ -23,6 +23,11 @@ COPY . .
 # Prisma Client 생성 (빌드 타임)
 RUN pnpm prisma generate
 
+# Analytics & SEO (빌드 타임 환경변수)
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
+ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
+ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+
 # Next.js build
 # ⚠️ build 시 env 검증 로직이 실행되지 않도록 코드에서 분리되어 있어야 함
 RUN pnpm build
