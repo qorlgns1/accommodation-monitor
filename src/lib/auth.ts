@@ -3,12 +3,12 @@ import GoogleProvider from "next-auth/providers/google";
 import KakaoProvider from "next-auth/providers/kakao";
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import prisma from "@/lib/prisma";
-import { validateWebEnv } from "@/lib/env";
+// import { validateWebEnv } from "@/lib/env";
 
 // 웹 앱 시작 시 환경변수 검증
-if (typeof window === "undefined") {
-  validateWebEnv();
-}
+// if (typeof window === "undefined") {
+//   validateWebEnv();
+// }
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
