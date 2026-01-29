@@ -6,7 +6,9 @@ import prisma from "@/lib/prisma";
 import { validateWebEnv } from "@/lib/env";
 
 // 웹 앱 시작 시 환경변수 검증
-validateWebEnv();
+if (typeof window === "undefined") {
+  validateWebEnv();
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
