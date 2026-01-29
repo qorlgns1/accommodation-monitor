@@ -1,6 +1,29 @@
+# node / build output
 node_modules
+dist
+build
+.next
+out
+
+# logs
 npm-debug.log
+yarn-error.log
+pnpm-debug.log
+
+# git
 .git
 .gitignore
-README.md
+
+# env
+.env
+.env.*
+!.env.example
+
+# docker
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+docker-compose.*.yml
+
+# OS
 .DS_Store

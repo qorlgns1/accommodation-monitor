@@ -1,0 +1,36 @@
+{
+  "accommodations": [
+    {
+      "name": "Airbnb 숙소 1",
+      "platform": "airbnb",
+      "url": "https://www.airbnb.co.kr/rooms/15959172",
+      "checkIn": "2026-04-26",
+      "checkOut": "2026-04-29",
+      "adults": 2
+    },
+    {
+      "name": "Airbnb 숙소 2",
+      "platform": "airbnb",
+      "url": "https://www.airbnb.co.kr/rooms/15959172",
+      "checkIn": "2026-03-18",
+      "checkOut": "2026-03-21",
+      "adults": 2
+    },
+    {
+      "name": "Jungfrau Lodge (Agoda)",
+      "platform": "agoda",
+      "url": "https://www.agoda.com/ko-kr/jungfrau-lodge-annex-crystal/hotel/grindelwald-ch.html",
+      "checkIn": "2026-08-11",
+      "checkOut": "2026-08-14",
+      "adults": 2
+    },
+    {
+      "name": "Hotel Cabana (Agoda) - 테스트용 매진",
+      "platform": "agoda",
+      "url": "https://www.agoda.com/ko-kr/hotel-cabana/hotel/grindelwald-ch.html",
+      "checkIn": "2026-12-25",
+      "checkOut": "2026-12-26",
+      "adults": 2
+    }
+  ]
+}

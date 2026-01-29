@@ -1,26 +1,51 @@
 {
-  "name": "accommodation-monitor",
-  "version": "1.0.0",
-  "description": "Airbnb, Agoda 숙소 예약 가능 여부 모니터링 및 카카오톡 알림",
-  "main": "src/index.js",
+  "name": "accommodation-monitor-web",
+  "version": "2.0.0",
+  "private": true,
+  "packageManager": "pnpm@10.28.0",
   "scripts": {
-    "start": "node --trace-warnings src/index.js",
-    "debug": "node --inspect=0.0.0.0:9229 src/index.js",
-    "test-notify": "node src/test-notify.js"
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "cron": "tsx src/lib/cron/worker.ts",
+    "db:push": "prisma db push",
+    "db:studio": "prisma studio",
+    "db:generate": "prisma generate",
+    "local:docker:up": "docker compose -f docker-compose.local.yml up",
+    "local:docker:up:build": "docker compose -f docker-compose.local.yml up --build",
+    "local:docker:down": "docker compose -f docker-compose.local.yml down",
+    "local:docker:db:push": "docker compose -f docker-compose.local.yml exec web pnpm prisma db push",
+    "local:docker:db:studio": "docker compose -f docker-compose.local.yml exec web pnpm prisma studio"
   },
-  "keywords": [
-    "airbnb",
-    "agoda",
-    "monitor",
-    "accommodation",
-    "kakao"
-  ],
-  "license": "MIT",
   "dependencies": {
-    "axios": "^1.6.0",
-    "dotenv": "^16.3.1",
-    "node-cron": "^3.0.3",
+    "next": "^15.1.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "next-auth": "^4.24.11",
+    "@prisma/client": "^6.2.0",
+    "prisma": "^6.2.0",
+    "@next-auth/prisma-adapter": "^1.0.7",
     "puppeteer": "^24.0.0",
-    "puppeteer-core": "^24.0.0"
+    "node-cron": "^3.0.3",
+    "axios": "^1.7.9",
+    "zod": "^3.24.1",
+    "date-fns": "^4.1.0",
+    "clsx": "^2.1.1",
+    "tailwind-merge": "^2.6.0",
+    "lucide-react": "^0.469.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.2",
+    "@types/node": "^22.10.5",
+    "@types/react": "^19.0.2",
+    "@types/react-dom": "^19.0.2",
+    "@types/node-cron": "^3.0.11",
+    "tailwindcss": "^3.4.17",
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.49",
+    "eslint": "^9.17.0",
+    "eslint-config-next": "^15.1.0",
+    "tsx": "^4.19.2"
   }
 }

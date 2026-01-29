@@ -1,0 +1,132 @@
+version: "3.8"
+
+# =====================================================
+# docker-compose.local.yml
+#
+# ✔ 로컬 개발 전용
+# ✔ Docker 기반 통합 테스트용
+# ✔ 운영 환경 사용 금지
+#
+# 특징
+# - DB: 없으면 자동 생성 / 있으면 재사용
+# - Web: Next.js dev + Hot Reload
+# - Worker: 로컬 테스트용 백그라운드 작업
+# =====================================================
+
+services:
+  # ---------------------------------------------------
+  # PostgreSQL (Local Development)
+  # ---------------------------------------------------
+  db:
+    image: postgres:15
+    container_name: accommodation-monitor-db-local
+
+    environment:
+      # 최초 실행 시에만 사용됨 (이미 DB 있으면 무시됨)
+      POSTGRES_USER: ${DB_USER:-postgres}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_DB: ${DB_NAME:-accommodation_monitor_local}
+
+    # 로컬 DB 툴(DBeaver 등) 접근용
+    ports:
+      - "${DB_PORT:-5432}:5432"
+
+    # named volume 사용 → DB 자동 생성 / 재사용의 핵심
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    # DB 준비 상태 체크
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-postgres}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  # ---------------------------------------------------
+  # Next.js Web (Local Dev + Hot Reload)
+  # ---------------------------------------------------
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.local
+
+    container_name: accommodation-monitor-web-local
+
+    ports:
+      - "${WEB_PORT:-3000}:3000"
+
+    environment:
+      # Prisma / API 서버 DB 연결
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor_local}
+
+      # NextAuth (로컬 기준)
+      NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+
+      # OAuth
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+
+      # 명시적 개발 모드
+      NODE_ENV: development
+
+    # DB 준비 후 실행
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # 🔥 Hot Reload 핵심
+    volumes:
+      # 로컬 소스 → 컨테이너
+      - ./:/app
+
+      # node_modules는 컨테이너 전용 (OS 차이 방지)
+      - /app/node_modules
+
+      # Next.js 빌드 캐시 격리
+      - /app/.next
+
+    # ⚠️ Prisma db push 자동 실행 금지
+    # 필요할 때만 수동 실행:
+    # docker compose exec web pnpm prisma db push
+    command: sh -c "pnpm prisma generate && pnpm dev"
+
+  # ---------------------------------------------------
+  # Background Worker (Local Test Only)
+  # ---------------------------------------------------
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+
+    container_name: accommodation-monitor-worker-local
+
+    environment:
+      DATABASE_URL: postgresql://${DB_USER:-postgres}:${DB_PASSWORD:-postgres}@db:5432/${DB_NAME:-accommodation_monitor_local}
+
+      KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
+      KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
+
+      # 기본값: 10분 주기
+      CRON_SCHEDULE: ${CRON_SCHEDULE:-*/10 * * * *}
+
+      # 병렬 처리 설정
+      WORKER_CONCURRENCY: ${WORKER_CONCURRENCY:-10}
+      BROWSER_POOL_SIZE: ${BROWSER_POOL_SIZE:-3}
+
+    depends_on:
+      db:
+        condition: service_healthy
+
+    # 로컬에서 워커 코드도 즉시 반영
+    volumes:
+      - ./:/app
+      - /app/node_modules
+
+# ---------------------------------------------------
+# Volumes
+# ---------------------------------------------------
+volumes:
+  postgres_data:

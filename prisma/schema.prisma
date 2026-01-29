@@ -1,0 +1,125 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// NextAuth.js 필수 모델
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  refresh_token_expires_in Int?    // 카카오 OAuth용 추가
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+
+  // 카카오톡 알림용 토큰
+  kakaoAccessToken  String? @db.Text
+  kakaoRefreshToken String? @db.Text
+  kakaoTokenExpiry  DateTime?
+
+  // 관계
+  accommodations Accommodation[]
+  checkLogs      CheckLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// 숙소 모델
+model Accommodation {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  name      String              // 숙소 이름 (사용자 지정)
+  platform  Platform            // airbnb, agoda
+  url       String              // 숙소 URL
+  checkIn   DateTime            // 체크인 날짜
+  checkOut  DateTime            // 체크아웃 날짜
+  adults    Int      @default(2) // 인원 수
+
+  isActive  Boolean  @default(true)  // 모니터링 활성화 여부
+  lastCheck DateTime?                // 마지막 체크 시간
+  lastStatus AvailabilityStatus @default(UNKNOWN) // 마지막 상태
+  lastPrice String?                  // 마지막 확인된 가격
+
+  checkLogs CheckLog[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId])
+  @@index([isActive])
+}
+
+// 체크 로그
+model CheckLog {
+  id              String   @id @default(cuid())
+  accommodationId String
+  accommodation   Accommodation @relation(fields: [accommodationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status          AvailabilityStatus
+  price           String?
+  errorMessage    String?
+  notificationSent Boolean @default(false)
+
+  createdAt       DateTime @default(now())
+
+  @@index([accommodationId])
+  @@index([createdAt])
+}
+
+enum Platform {
+  AIRBNB
+  AGODA
+}
+
+enum AvailabilityStatus {
+  AVAILABLE
+  UNAVAILABLE
+  ERROR
+  UNKNOWN
+}
