@@ -1,14 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { z } from "zod";
+import { getServerSession } from 'next-auth';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
+import { z } from 'zod';
+
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 
 const updateAccommodationSchema = z.object({
   name: z.string().min(1).optional(),
   url: z.string().url().optional(),
-  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
-  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  checkIn: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
+  checkOut: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   adults: z.number().min(1).max(20).optional(),
   isActive: z.boolean().optional(),
 });
@@ -23,7 +32,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const accommodation = await prisma.accommodation.findFirst({
@@ -33,14 +42,14 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     },
     include: {
       checkLogs: {
-        orderBy: { createdAt: "desc" },
+        orderBy: { createdAt: 'desc' },
         take: 50,
       },
     },
   });
 
   if (!accommodation) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   return NextResponse.json(accommodation);
@@ -52,7 +61,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // 소유권 확인
@@ -64,7 +73,7 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
   });
 
   if (!existing) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   try {
@@ -79,24 +88,18 @@ export async function PATCH(request: NextRequest, { params }: RouteParams) {
         ...(data.checkIn && { checkIn: new Date(data.checkIn) }),
         ...(data.checkOut && { checkOut: new Date(data.checkOut) }),
         ...(data.adults && { adults: data.adults }),
-        ...(typeof data.isActive === "boolean" && { isActive: data.isActive }),
+        ...(typeof data.isActive === 'boolean' && { isActive: data.isActive }),
       },
     });
 
     return NextResponse.json(accommodation);
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
     }
 
-    console.error("숙소 수정 오류:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('숙소 수정 오류:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -106,7 +109,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   const { id } = await params;
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // 소유권 확인
@@ -118,7 +121,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
   });
 
   if (!existing) {
-    return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json({ error: 'Not found' }, { status: 404 });
   }
 
   await prisma.accommodation.delete({

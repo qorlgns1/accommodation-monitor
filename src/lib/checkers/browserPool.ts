@@ -1,13 +1,15 @@
-import type { Browser } from "puppeteer";
-import { getEnvNumber } from "@/lib/env";
-import { createBrowser } from "./browser";
+import type { Browser } from 'puppeteer';
+
+import { getEnvNumber } from '@/lib/env';
+
+import { createBrowser } from './browser';
 
 type Waiter = {
   resolve: (browser: Browser) => void;
   reject: (error: Error) => void;
 };
 
-const POOL_SIZE = Math.max(1, getEnvNumber("BROWSER_POOL_SIZE", 2));
+const POOL_SIZE = Math.max(1, getEnvNumber('BROWSER_POOL_SIZE', 2));
 
 const state = {
   poolSize: POOL_SIZE,
@@ -60,11 +62,12 @@ async function fulfillWaiterIfNeeded(): Promise<void> {
 
 export async function acquireBrowser(): Promise<Browser> {
   if (state.shuttingDown) {
-    throw new Error("Browser pool is shutting down");
+    throw new Error('Browser pool is shutting down');
   }
 
   while (state.idle.length > 0) {
-    const browser = state.idle.pop()!;
+    const browser = state.idle.pop();
+    if (!browser) break;
     if (isBrowserHealthy(browser)) {
       return browser;
     }
@@ -116,7 +119,7 @@ export async function closeBrowserPool(): Promise<void> {
   while (state.waiters.length > 0) {
     const waiter = state.waiters.shift();
     if (waiter) {
-      waiter.reject(new Error("Browser pool closed"));
+      waiter.reject(new Error('Browser pool closed'));
     }
   }
 

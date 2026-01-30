@@ -1,11 +1,9 @@
-import { baseCheck } from "./baseChecker";
-import { formatDate } from "./utils";
-import { AIRBNB_PATTERNS } from "./constants";
-import type { CheckResult, AccommodationToCheck } from "./types";
+import { baseCheck } from './baseChecker';
+import { AIRBNB_PATTERNS } from './constants';
+import type { AccommodationToCheck, CheckResult } from './types';
+import { formatDate } from './utils';
 
-export async function checkAirbnb(
-  accommodation: AccommodationToCheck,
-): Promise<CheckResult> {
+export async function checkAirbnb(accommodation: AccommodationToCheck): Promise<CheckResult> {
   return baseCheck(accommodation, {
     patterns: AIRBNB_PATTERNS,
     scrollDistance: 500,

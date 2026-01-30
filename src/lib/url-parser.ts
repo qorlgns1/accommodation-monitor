@@ -1,5 +1,5 @@
 export interface ParsedAccommodationUrl {
-  platform: "AIRBNB" | "AGODA" | null;
+  platform: 'AIRBNB' | 'AGODA' | null;
   baseUrl: string;
   checkIn: string | null;
   checkOut: string | null;
@@ -25,9 +25,9 @@ export function parseAccommodationUrl(url: string): ParsedAccommodationUrl {
     const params = urlObj.searchParams;
 
     // 플랫폼 감지
-    if (urlObj.hostname.includes("airbnb")) {
+    if (urlObj.hostname.includes('airbnb')) {
       return parseAirbnbUrl(urlObj, params);
-    } else if (urlObj.hostname.includes("agoda")) {
+    } else if (urlObj.hostname.includes('agoda')) {
       return parseAgodaUrl(urlObj, params);
     }
   } catch {
@@ -40,29 +40,24 @@ export function parseAccommodationUrl(url: string): ParsedAccommodationUrl {
 /**
  * Airbnb URL 파싱
  */
-function parseAirbnbUrl(
-  urlObj: URL,
-  params: URLSearchParams,
-): ParsedAccommodationUrl {
+function parseAirbnbUrl(urlObj: URL, params: URLSearchParams): ParsedAccommodationUrl {
   // 기본 URL 추출 (쿼리 파라미터 제거)
   const pathMatch = urlObj.pathname.match(/\/rooms\/(\d+)/);
   const roomId = pathMatch ? pathMatch[1] : null;
-  const baseUrl = roomId
-    ? `${urlObj.origin}/rooms/${roomId}`
-    : `${urlObj.origin}${urlObj.pathname}`;
+  const baseUrl = roomId ? `${urlObj.origin}/rooms/${roomId}` : `${urlObj.origin}${urlObj.pathname}`;
 
   // 숙소명 추출 시도 (Airbnb는 URL에 이름이 없어서 null)
   const name = null;
 
   // 날짜 파싱
-  const checkIn = params.get("check_in");
-  const checkOut = params.get("check_out");
+  const checkIn = params.get('check_in');
+  const checkOut = params.get('check_out');
 
   // 인원 파싱
-  const adults = params.get("adults");
+  const adults = params.get('adults');
 
   return {
-    platform: "AIRBNB",
+    platform: 'AIRBNB',
     baseUrl,
     checkIn: checkIn && isValidDate(checkIn) ? checkIn : null,
     checkOut: checkOut && isValidDate(checkOut) ? checkOut : null,
@@ -74,10 +69,7 @@ function parseAirbnbUrl(
 /**
  * Agoda URL 파싱
  */
-function parseAgodaUrl(
-  urlObj: URL,
-  params: URLSearchParams,
-): ParsedAccommodationUrl {
+function parseAgodaUrl(urlObj: URL, params: URLSearchParams): ParsedAccommodationUrl {
   // 기본 URL 추출 (쿼리 파라미터 제거)
   const baseUrl = `${urlObj.origin}${urlObj.pathname}`;
 
@@ -87,8 +79,8 @@ function parseAgodaUrl(
   const name = pathMatch ? formatHotelName(pathMatch[1]) : null;
 
   // 날짜 파싱
-  const checkIn = params.get("checkIn");
-  const los = params.get("los"); // Length of Stay (숙박 일수)
+  const checkIn = params.get('checkIn');
+  const los = params.get('los'); // Length of Stay (숙박 일수)
 
   let checkOut: string | null = null;
   if (checkIn && isValidDate(checkIn) && los) {
@@ -99,10 +91,10 @@ function parseAgodaUrl(
   }
 
   // 인원 파싱
-  const adults = params.get("adults");
+  const adults = params.get('adults');
 
   return {
-    platform: "AGODA",
+    platform: 'AGODA',
     baseUrl,
     checkIn: checkIn && isValidDate(checkIn) ? checkIn : null,
     checkOut,
@@ -128,7 +120,7 @@ function isValidDate(dateStr: string): boolean {
 function calculateCheckOut(checkIn: string, nights: number): string {
   const date = new Date(checkIn);
   date.setDate(date.getDate() + nights);
-  return date.toISOString().split("T")[0];
+  return date.toISOString().split('T')[0];
 }
 
 /**
@@ -137,7 +129,7 @@ function calculateCheckOut(checkIn: string, nights: number): string {
  */
 function formatHotelName(slug: string): string {
   return slug
-    .split("-")
+    .split('-')
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-    .join(" ");
+    .join(' ');
 }

@@ -1,8 +1,11 @@
-import { NextAuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import KakaoProvider from "next-auth/providers/kakao";
-import { PrismaAdapter } from "@next-auth/prisma-adapter";
-import prisma from "@/lib/prisma";
+import type { NextAuthOptions } from 'next-auth';
+import GoogleProvider from 'next-auth/providers/google';
+import KakaoProvider from 'next-auth/providers/kakao';
+
+import { PrismaAdapter } from '@next-auth/prisma-adapter';
+
+import prisma from '@/lib/prisma';
+
 // import { validateWebEnv } from "@/lib/env";
 
 // 웹 앱 시작 시 환경변수 검증
@@ -14,15 +17,15 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   providers: [
     GoogleProvider({
-      clientId: process.env.GOOGLE_CLIENT_ID!,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
     }),
     KakaoProvider({
-      clientId: process.env.KAKAO_CLIENT_ID!,
-      clientSecret: process.env.KAKAO_CLIENT_SECRET!,
+      clientId: process.env.KAKAO_CLIENT_ID ?? '',
+      clientSecret: process.env.KAKAO_CLIENT_SECRET ?? '',
       authorization: {
         params: {
-          scope: "profile_nickname profile_image account_email talk_message",
+          scope: 'profile_nickname profile_image account_email talk_message',
         },
       },
     }),
@@ -30,7 +33,7 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async signIn({ account }) {
       // 카카오 로그인 시 토큰을 DB에 저장
-      if (account?.provider === "kakao" && account.access_token) {
+      if (account?.provider === 'kakao' && account.access_token) {
         const existingAccount = await prisma.account.findUnique({
           where: {
             provider_providerAccountId: {
@@ -47,9 +50,7 @@ export const authOptions: NextAuthOptions = {
             data: {
               kakaoAccessToken: account.access_token,
               kakaoRefreshToken: account.refresh_token,
-              kakaoTokenExpiry: account.expires_at
-                ? new Date(account.expires_at * 1000)
-                : null,
+              kakaoTokenExpiry: account.expires_at ? new Date(account.expires_at * 1000) : null,
             },
           });
         }
@@ -64,10 +65,10 @@ export const authOptions: NextAuthOptions = {
     },
   },
   pages: {
-    signIn: "/login",
+    signIn: '/login',
   },
   session: {
-    strategy: "database",
+    strategy: 'database',
   },
   secret: process.env.NEXTAUTH_SECRET,
 };

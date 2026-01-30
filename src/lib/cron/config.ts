@@ -1,11 +1,11 @@
-import { validateWorkerEnv, getEnvNumber } from "@/lib/env";
+import { getEnvNumber, validateWorkerEnv } from '@/lib/env';
 
 // 워커 시작 시 환경변수 검증
 validateWorkerEnv();
 
-const schedule = process.env.CRON_SCHEDULE || "*/10 * * * *";
-const configuredConcurrency = getEnvNumber("WORKER_CONCURRENCY", 3);
-const browserPoolSize = getEnvNumber("BROWSER_POOL_SIZE", 2);
+const schedule = process.env.CRON_SCHEDULE || '*/10 * * * *';
+const configuredConcurrency = getEnvNumber('WORKER_CONCURRENCY', 3);
+const browserPoolSize = getEnvNumber('BROWSER_POOL_SIZE', 2);
 
 export const CRON_CONFIG = {
   schedule,
@@ -16,7 +16,7 @@ export const CRON_CONFIG = {
 
 // 설정 로깅
 export function logConfig(): void {
-  console.log("📋 워커 설정:");
+  console.log('📋 워커 설정:');
   console.log(`   - 스케줄: ${CRON_CONFIG.schedule}`);
   const concurrencyLabel =
     configuredConcurrency > browserPoolSize

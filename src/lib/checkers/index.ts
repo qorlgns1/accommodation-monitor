@@ -1,16 +1,14 @@
-import { checkAirbnb } from "./airbnb";
-import { checkAgoda } from "./agoda";
-import type { CheckResult, AccommodationToCheck } from "./types";
+import { checkAgoda } from './agoda';
+import { checkAirbnb } from './airbnb';
+import type { AccommodationToCheck, CheckResult } from './types';
 
 export type { CheckResult, AccommodationToCheck };
 
-export async function checkAccommodation(
-  accommodation: AccommodationToCheck
-): Promise<CheckResult> {
+export async function checkAccommodation(accommodation: AccommodationToCheck): Promise<CheckResult> {
   switch (accommodation.platform) {
-    case "AIRBNB":
+    case 'AIRBNB':
       return checkAirbnb(accommodation);
-    case "AGODA":
+    case 'AGODA':
       return checkAgoda(accommodation);
     default:
       return {

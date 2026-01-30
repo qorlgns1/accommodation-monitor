@@ -5,8 +5,8 @@ export function createLimiter(concurrency: number) {
   const runNext = () => {
     if (queue.length > 0 && running < concurrency) {
       running++;
-      const next = queue.shift()!;
-      next();
+      const next = queue.shift();
+      if (next) next();
     }
   };
 

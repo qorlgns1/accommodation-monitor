@@ -1,14 +1,14 @@
-import { RETRYABLE_ERRORS } from "./constants";
+import { RETRYABLE_ERRORS } from './constants';
 
 export function isRetryableError(errorMessage: string): boolean {
-  if (errorMessage.includes("Navigation timeout")) {
+  if (errorMessage.includes('Navigation timeout')) {
     return false;
   }
   return RETRYABLE_ERRORS.some((pattern) => errorMessage.includes(pattern));
 }
 
 export function formatDate(date: Date): string {
-  return date.toISOString().split("T")[0];
+  return date.toISOString().split('T')[0];
 }
 
 export function delay(ms: number): Promise<void> {
