@@ -59,11 +59,11 @@ export default defineConfig(
       '@typescript-eslint/no-explicit-any': 'error',
       '@typescript-eslint/consistent-type-imports': 'error',
 
-      // 일반
-      'no-console': ['warn', { allow: ['warn', 'error'] }],
+      // console.log 허용
+      'no-console': 'off',
     },
   },
 
-  // Prettier 충돌 방지 (맨 마지막)
+  // Prettier 충돌 방지
   prettierConfig,
 );
