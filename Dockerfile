@@ -1,64 +1,67 @@
 # ============================================
-# Stage 1: Builder
+# Stage 1: Base (공통 의존성)
 # ============================================
-FROM node:20-slim AS builder
+FROM node:24-slim AS base
+RUN apt-get update && apt-get install -y \
+    chromium \
+    openssl ca-certificates fonts-liberation libasound2 libatk-bridge2.0-0 \
+    libatk1.0-0 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 \
+    libgbm1 libglib2.0-0 libgtk-3-0 libnspr4 libnss3 libpango-1.0-0 \
+    libpangocairo-1.0-0 libstdc++6 libx11-6 libxcb1 libxcomposite1 \
+    libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
+    libxss1 libxtst6 && rm -rf /var/lib/apt/lists/*
 
-# 필수 패키지 (Prisma용 OpenSSL 포함)
-RUN apt-get update -y \
-  && apt-get install -y openssl \
-  && rm -rf /var/lib/apt/lists/*
-
-# pnpm
 RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
-
 WORKDIR /app
 
-# 의존성 설치
+# ============================================
+# Stage 2: Builder (빌드 및 ARG 주입)
+# ============================================
+FROM base AS builder
+
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
-# 소스 복사
 COPY . .
-
-# Prisma Client 생성 (빌드 타임)
 RUN pnpm prisma generate
-
-# Analytics & SEO (빌드 타임 환경변수)
-ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
-ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
-ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
-
-# Next.js build
-# ⚠️ build 시 env 검증 로직이 실행되지 않도록 코드에서 분리되어 있어야 함
 RUN pnpm build
 
-
 # ============================================
-# Stage 2: Runner
 # ============================================
-FROM node:20-slim AS runner
-
-# 런타임 OpenSSL (Prisma 실행용)
-RUN apt-get update -y \
-  && apt-get install -y openssl \
-  && rm -rf /var/lib/apt/lists/*
-
+# Stage 3: Runner (실행 단계)
+# ============================================
+FROM base AS runner
 WORKDIR /app
-ENV NODE_ENV=production
 
-# non-root 유저
-RUN addgroup --system --gid 1001 nodejs \
- && adduser --system --uid 1001 nextjs
+ENV NODE_ENV=${NODE_ENV:-production}
+ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# standalone 결과물만 복사
-COPY --from=builder /app/.next/standalone ./
-COPY --from=builder /app/.next/static ./.next/static
-COPY --from=builder /app/prisma ./prisma
+# nextjs 유저 생성 및 홈 디렉토리 보장
+# --home /home/nextjs 옵션으로 실제 작업 공간을 만들어줍니다.
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 --home /home/nextjs nextjs
+
+# Corepack 및 pnpm 캐시 경로를 홈 디렉토리 하위로 지정
+ENV COREPACK_HOME=/home/nextjs/.corepack
+ENV PNPM_HOME=/home/nextjs/.pnpm
+ENV PATH=$PNPM_HOME:$PATH
+
+# 소유권 미리 설정 (필수!)
+# 앱 디렉토리(/app)와 유저 홈(/home/nextjs)의 주인은 nextjs 유저여야 합니다.
+RUN mkdir -p /home/nextjs/.corepack /home/nextjs/.pnpm && \
+    chown -R nextjs:nodejs /home/nextjs /app
+
+# [수정] public 복사 제외, static과 standalone만 복사
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Worker 실행을 위한 최소한의 코드 (src는 워커 경로에 따라 필요 여부 결정)
+COPY --from=builder --chown=nextjs:nodejs /app/src ./src
+COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
+COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
 
 USER nextjs
-
 EXPOSE 3000
-ENV PORT=3000
-ENV HOSTNAME="0.0.0.0"
-
 CMD ["node", "server.js"]

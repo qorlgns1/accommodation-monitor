@@ -3,7 +3,7 @@ import { getEnvNumber, validateWorkerEnv } from '@/lib/env';
 // 워커 시작 시 환경변수 검증
 validateWorkerEnv();
 
-const schedule = process.env.CRON_SCHEDULE || '*/10 * * * *';
+const schedule = process.env.CRON_SCHEDULE || '*/30 * * * *';
 const configuredConcurrency = getEnvNumber('WORKER_CONCURRENCY', 3);
 const browserPoolSize = getEnvNumber('BROWSER_POOL_SIZE', 2);
 

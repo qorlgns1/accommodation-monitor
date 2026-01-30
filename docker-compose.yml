@@ -12,7 +12,7 @@ services:
         NEXT_PUBLIC_NAVER_SITE_VERIFICATION: ${NEXT_PUBLIC_NAVER_SITE_VERIFICATION}
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION}
     ports:
-      - "4000:3000"
+      - '4000:3000'
     environment:
       DATABASE_URL: ${DATABASE_URL}
       NEXTAUTH_URL: ${NEXTAUTH_URL}
@@ -22,16 +22,15 @@ services:
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     restart: unless-stopped
-    depends_on:
-      - worker
 
   # ==============================
-  # Worker (Cron / Monitoring)
+  # Background Worker (Cron / Puppeteer)
   # ==============================
   worker:
     build:
       context: .
-      dockerfile: Dockerfile.worker
+      dockerfile: Dockerfile
+    command: ['pnpm', 'cron']
     environment:
       DATABASE_URL: ${DATABASE_URL}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
@@ -47,6 +46,6 @@ services:
     deploy:
       resources:
         limits:
-          memory: 4G
+          memory: 512M
         reservations:
-          memory: 2G
+          memory: 256M

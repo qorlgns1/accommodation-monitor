@@ -159,10 +159,10 @@ cp .env.example .env
 
 ```bash
 # ⚠️ Docker Compose 내부용 (사용하지 마세요)
-# DATABASE_URL=postgresql://postgres:postgres@db:5432/accommodation_monitor_local
+# DATABASE_URL=postgresql://postgres:postgres@db:5432/accommodation_monitor
 
 # ✅ 로컬 네이티브 실행용 (이것을 사용하세요)
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor_local
+DATABASE_URL=postgresql://postgres:postgres@localhost:5432/accommodation_monitor
 ```
 
 > **왜 `localhost`인가요?**  
@@ -177,7 +177,7 @@ docker run -d \
   --name postgres-local \
   -e POSTGRES_USER=postgres \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=accommodation_monitor_local \
+  -e POSTGRES_DB=accommodation_monitor \
   -p 5432:5432 \
   postgres:15
 ```
@@ -277,7 +277,7 @@ npm run local:docker:db:studio # Prisma Studio (Docker 환경)
 | `GOOGLE_CLIENT_SECRET` | 구글 OAuth                 |
 | `KAKAO_CLIENT_ID`      | 카카오 REST API 키         |
 | `KAKAO_CLIENT_SECRET`  | 카카오 Client Secret       |
-| `CRON_SCHEDULE`        | 워커 실행 주기 (기본 10분) |
+| `CRON_SCHEDULE`        | 워커 실행 주기 (기본 30분) |
 
 ---
 
