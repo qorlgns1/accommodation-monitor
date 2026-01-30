@@ -1,1 +1,1 @@
-export { GoogleAnalytics } from "./GoogleAnalytics";
+export { GoogleAnalytics } from './GoogleAnalytics';
