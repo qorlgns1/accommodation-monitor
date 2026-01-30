@@ -1,15 +1,18 @@
-import { NextRequest, NextResponse } from "next/server";
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/auth";
-import prisma from "@/lib/prisma";
-import { z } from "zod";
+import { getServerSession } from 'next-auth';
+import type { NextRequest } from 'next/server';
+import { NextResponse } from 'next/server';
+
+import { z } from 'zod';
+
+import { authOptions } from '@/lib/auth';
+import prisma from '@/lib/prisma';
 
 const createAccommodationSchema = z.object({
-  name: z.string().min(1, "이름을 입력해주세요"),
-  platform: z.enum(["AIRBNB", "AGODA"]),
-  url: z.string().url("올바른 URL을 입력해주세요"),
-  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "날짜 형식이 올바르지 않습니다"),
-  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "날짜 형식이 올바르지 않습니다"),
+  name: z.string().min(1, '이름을 입력해주세요'),
+  platform: z.enum(['AIRBNB', 'AGODA']),
+  url: z.string().url('올바른 URL을 입력해주세요'),
+  checkIn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
+  checkOut: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, '날짜 형식이 올바르지 않습니다'),
   adults: z.number().min(1).max(20).default(2),
 });
 
@@ -18,12 +21,12 @@ export async function GET() {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   const accommodations = await prisma.accommodation.findMany({
     where: { userId: session.user.id },
-    orderBy: { createdAt: "desc" },
+    orderBy: { createdAt: 'desc' },
   });
 
   return NextResponse.json(accommodations);
@@ -34,7 +37,7 @@ export async function POST(request: NextRequest) {
   const session = await getServerSession(authOptions);
 
   if (!session?.user?.id) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   try {
@@ -43,10 +46,10 @@ export async function POST(request: NextRequest) {
 
     // URL에서 플랫폼 자동 감지
     let platform = data.platform;
-    if (data.url.includes("airbnb")) {
-      platform = "AIRBNB";
-    } else if (data.url.includes("agoda")) {
-      platform = "AGODA";
+    if (data.url.includes('airbnb')) {
+      platform = 'AIRBNB';
+    } else if (data.url.includes('agoda')) {
+      platform = 'AGODA';
     }
 
     const accommodation = await prisma.accommodation.create({
@@ -64,16 +67,10 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(accommodation, { status: 201 });
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return NextResponse.json(
-        { error: "Validation failed", details: error.errors },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Validation failed', details: error.errors }, { status: 400 });
     }
 
-    console.error("숙소 생성 오류:", error);
-    return NextResponse.json(
-      { error: "Internal server error" },
-      { status: 500 }
-    );
+    console.error('숙소 생성 오류:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

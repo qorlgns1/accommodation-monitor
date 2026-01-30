@@ -11,5 +11,5 @@ export interface AccommodationToCheck {
   checkIn: Date;
   checkOut: Date;
   adults: number;
-  platform: "AIRBNB" | "AGODA";
+  platform: 'AIRBNB' | 'AGODA';
 }

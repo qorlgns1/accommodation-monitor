@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface LocalDateTimeProps {
   date: Date | string;
@@ -12,17 +12,17 @@ interface LocalDateTimeProps {
  * SSR 시에는 ISO 문자열을, 클라이언트에서는 로컬 시간을 표시
  */
 export function LocalDateTime({ date, className }: LocalDateTimeProps) {
-  const [formatted, setFormatted] = useState<string>("");
+  const [formatted, setFormatted] = useState<string>('');
 
   useEffect(() => {
     const d = new Date(date);
     setFormatted(
       d.toLocaleString(undefined, {
-        year: "numeric",
-        month: "2-digit",
-        day: "2-digit",
-        hour: "2-digit",
-        minute: "2-digit",
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
       }),
     );
   }, [date]);
@@ -41,7 +41,7 @@ export function LocalDateTime({ date, className }: LocalDateTimeProps) {
 export function LocalDate({ date, className }: LocalDateTimeProps) {
   // 체크인/체크아웃은 날짜만 의미하므로 UTC 기준으로 추출
   const d = new Date(date);
-  const formatted = d.toISOString().split("T")[0];
+  const formatted = d.toISOString().split('T')[0];
 
   return <span className={className}>{formatted}</span>;
 }

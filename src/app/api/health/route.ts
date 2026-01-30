@@ -1,13 +1,14 @@
-import { NextResponse } from "next/server";
-import prisma from "@/lib/prisma";
+import { NextResponse } from 'next/server';
+
+import prisma from '@/lib/prisma';
 
 interface HealthStatus {
-  status: "healthy" | "unhealthy";
+  status: 'healthy' | 'unhealthy';
   timestamp: string;
   uptime: number;
   checks: {
     database: {
-      status: "connected" | "disconnected";
+      status: 'connected' | 'disconnected';
       latency?: number;
       error?: string;
     };
@@ -15,15 +16,15 @@ interface HealthStatus {
 }
 
 export async function GET() {
-  const isDev = process.env.NODE_ENV === "development";
+  const isDev = process.env.NODE_ENV === 'development';
 
   const health: HealthStatus = {
-    status: "healthy",
+    status: 'healthy',
     timestamp: new Date().toISOString(),
     uptime: process.uptime(),
     checks: {
       database: {
-        status: "disconnected",
+        status: 'disconnected',
       },
     },
   };
@@ -33,21 +34,21 @@ export async function GET() {
     const dbStart = Date.now();
     await prisma.$queryRaw`SELECT 1`;
     health.checks.database = {
-      status: "connected",
+      status: 'connected',
       latency: Date.now() - dbStart,
     };
   } catch (error) {
-    health.status = "unhealthy";
+    health.status = 'unhealthy';
     health.checks.database = {
-      status: "disconnected",
+      status: 'disconnected',
       // 개발 환경에서만 상세 에러 표시
       ...(isDev && {
-        error: error instanceof Error ? error.message : "Unknown error",
+        error: error instanceof Error ? error.message : 'Unknown error',
       }),
     };
   }
 
-  const statusCode = health.status === "healthy" ? 200 : 503;
+  const statusCode = health.status === 'healthy' ? 200 : 503;
 
   return NextResponse.json(health, { status: statusCode });
 }

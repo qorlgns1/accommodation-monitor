@@ -1,10 +1,11 @@
 // src/lib/cron/worker.ts
+import cron from 'node-cron';
 
-import cron from "node-cron";
-import prisma from "@/lib/prisma";
-import { checkAllAccommodations, isProcessing } from "./processor";
-import { CRON_CONFIG, logConfig } from "./config";
-import { closeBrowserPool } from "@/lib/checkers/browserPool";
+import { closeBrowserPool } from '@/lib/checkers/browserPool';
+import prisma from '@/lib/prisma';
+
+import { CRON_CONFIG, logConfig } from './config';
+import { checkAllAccommodations, isProcessing } from './processor';
 
 const SHUTDOWN_TIMEOUT = 60000; // 최대 60초 대기
 
@@ -25,10 +26,7 @@ setTimeout(() => {
 // ============================================
 // 크론 스케줄 등록
 // ============================================
-const scheduledTask = cron.schedule(
-  CRON_CONFIG.schedule,
-  checkAllAccommodations,
-);
+const scheduledTask = cron.schedule(CRON_CONFIG.schedule, checkAllAccommodations);
 
 // ============================================
 // 프로세스 종료 핸들링
@@ -43,11 +41,11 @@ async function gracefulShutdown(): Promise<void> {
 
   // 새로운 작업 스케줄링 중지
   scheduledTask.stop();
-  console.log("   - 크론 스케줄 중지됨");
+  console.log('   - 크론 스케줄 중지됨');
 
   // 진행 중인 작업 완료 대기
   if (isProcessing()) {
-    console.log("   - 진행 중인 작업 완료 대기 중...");
+    console.log('   - 진행 중인 작업 완료 대기 중...');
 
     const startWait = Date.now();
     while (isProcessing() && Date.now() - startWait < SHUTDOWN_TIMEOUT) {
@@ -55,21 +53,21 @@ async function gracefulShutdown(): Promise<void> {
     }
 
     if (isProcessing()) {
-      console.log("   ⚠️ 타임아웃: 작업 완료를 기다리지 못하고 종료합니다.");
+      console.log('   ⚠️ 타임아웃: 작업 완료를 기다리지 못하고 종료합니다.');
     } else {
-      console.log("   - 모든 작업 완료됨");
+      console.log('   - 모든 작업 완료됨');
     }
   }
 
   await closeBrowserPool();
-  console.log("   - 브라우저 풀 종료됨");
+  console.log('   - 브라우저 풀 종료됨');
 
   await prisma.$disconnect();
-  console.log("   - DB 연결 해제됨");
-  console.log("👋 워커 종료 완료\n");
+  console.log('   - DB 연결 해제됨');
+  console.log('👋 워커 종료 완료\n');
 
   process.exit(0);
 }
 
-process.on("SIGINT", gracefulShutdown);
-process.on("SIGTERM", gracefulShutdown);
+process.on('SIGINT', gracefulShutdown);
+process.on('SIGTERM', gracefulShutdown);

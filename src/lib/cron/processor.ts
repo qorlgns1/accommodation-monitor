@@ -1,9 +1,11 @@
-import prisma from "@/lib/prisma";
-import { checkAccommodation } from "@/lib/checkers";
-import { notifyAvailable } from "@/lib/kakao/message";
-import { createLimiter } from "./limiter";
-import { CRON_CONFIG } from "./config";
-import type { AvailabilityStatus, Platform } from "@prisma/client";
+import type { AvailabilityStatus, Platform } from '@prisma/client';
+
+import { checkAccommodation } from '@/lib/checkers';
+import { notifyAvailable } from '@/lib/kakao/message';
+import prisma from '@/lib/prisma';
+
+import { CRON_CONFIG } from './config';
+import { createLimiter } from './limiter';
 
 // ============================================
 // 타입 정의
@@ -35,9 +37,7 @@ export function isProcessing(): boolean {
 // ============================================
 // 단일 숙소 처리
 // ============================================
-async function processAccommodation(
-  accommodation: AccommodationWithUser,
-): Promise<void> {
+async function processAccommodation(accommodation: AccommodationWithUser): Promise<void> {
   const startTime = Date.now();
 
   try {
@@ -69,30 +69,24 @@ async function processAccommodation(
 // ============================================
 // 상태 판단
 // ============================================
-function determineStatus(result: {
-  error: string | null;
-  available: boolean;
-}): AvailabilityStatus {
-  if (result.error) return "ERROR";
-  if (result.available) return "AVAILABLE";
-  return "UNAVAILABLE";
+function determineStatus(result: { error: string | null; available: boolean }): AvailabilityStatus {
+  if (result.error) return 'ERROR';
+  if (result.available) return 'AVAILABLE';
+  return 'UNAVAILABLE';
 }
 
 // ============================================
 // 상태 로깅
 // ============================================
-function logStatus(
-  status: AvailabilityStatus,
-  result: { error: string | null; price: string | null },
-): void {
+function logStatus(status: AvailabilityStatus, result: { error: string | null; price: string | null }): void {
   switch (status) {
-    case "ERROR":
+    case 'ERROR':
       console.log(`  ❌ 에러: ${result.error}`);
       break;
-    case "AVAILABLE":
-      console.log(`  ✅ 예약 가능! ${result.price || ""}`);
+    case 'AVAILABLE':
+      console.log(`  ✅ 예약 가능! ${result.price || ''}`);
       break;
-    case "UNAVAILABLE":
+    case 'UNAVAILABLE':
       console.log(`  ⛔ 예약 불가`);
       break;
   }
@@ -127,9 +121,7 @@ async function sendNotificationIfNeeded(
   result: { price: string | null; checkUrl: string },
 ): Promise<void> {
   const shouldNotify =
-    status === "AVAILABLE" &&
-    accommodation.lastStatus !== "AVAILABLE" &&
-    accommodation.user.kakaoAccessToken;
+    status === 'AVAILABLE' && accommodation.lastStatus !== 'AVAILABLE' && accommodation.user.kakaoAccessToken;
 
   if (!shouldNotify) return;
 
@@ -202,17 +194,17 @@ async function getActiveAccommodations(): Promise<AccommodationWithUser[]> {
 // ============================================
 export async function checkAllAccommodations(): Promise<void> {
   if (isRunning) {
-    console.log("⚠️  이전 작업이 아직 실행 중입니다. 스킵합니다.");
+    console.log('⚠️  이전 작업이 아직 실행 중입니다. 스킵합니다.');
     return;
   }
 
   isRunning = true;
   const startTime = Date.now();
 
-  console.log("\n========================================");
-  console.log(`🕐 모니터링 시작: ${new Date().toLocaleString("ko-KR")}`);
+  console.log('\n========================================');
+  console.log(`🕐 모니터링 시작: ${new Date().toLocaleString('ko-KR')}`);
   console.log(`⚙️  동시 처리: ${CRON_CONFIG.concurrency}개`);
-  console.log("========================================");
+  console.log('========================================');
 
   try {
     const accommodations = await getActiveAccommodations();
@@ -220,22 +212,18 @@ export async function checkAllAccommodations(): Promise<void> {
     console.log(`📋 체크할 숙소: ${accommodations.length}개`);
 
     if (accommodations.length === 0) {
-      console.log("체크할 숙소가 없습니다.\n");
+      console.log('체크할 숙소가 없습니다.\n');
       return; // finally에서 isRunning = false 처리됨
     }
 
     const limit = createLimiter(CRON_CONFIG.concurrency);
 
-    await Promise.all(
-      accommodations.map((accommodation) =>
-        limit(() => processAccommodation(accommodation)),
-      ),
-    );
+    await Promise.all(accommodations.map((accommodation) => limit(() => processAccommodation(accommodation))));
 
     const elapsed = Math.round((Date.now() - startTime) / 1000);
     console.log(`\n✅ 모니터링 완료 (총 ${elapsed}초 소요)\n`);
   } catch (error) {
-    console.error("모니터링 중 오류 발생:", error);
+    console.error('모니터링 중 오류 발생:', error);
   } finally {
     isRunning = false;
   }
