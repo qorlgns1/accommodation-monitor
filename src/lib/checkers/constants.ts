@@ -7,7 +7,14 @@ export const AGODA_PATTERNS = {
     '동일한 날짜로 다른 숙소 검색하기',
     'See available properties',
   ],
-  available: ['지금 예약하기', 'Book now', '예약 무료 취소 가능', 'Covered by EasyCancel'],
+  available: [
+    '지금 예약하기',
+    'Book now',
+    '예약 무료 취소 가능',
+    'Covered by EasyCancel',
+    '서두르세요, 당사 마지막 객실입니다!',
+    'Hurry, our last room!',
+  ],
 };
 
 export const AIRBNB_PATTERNS = {
