@@ -1,13 +1,10 @@
 services:
-  # ==============================
-  # Next.js Web
-  # ==============================
   web:
     build:
       context: .
       dockerfile: Dockerfile
+      target: web
       args:
-        DATABASE_URL: ${DATABASE_URL}
         NEXT_PUBLIC_GA_MEASUREMENT_ID: ${NEXT_PUBLIC_GA_MEASUREMENT_ID}
         NEXT_PUBLIC_NAVER_SITE_VERIFICATION: ${NEXT_PUBLIC_NAVER_SITE_VERIFICATION}
         NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION: ${NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION}
@@ -23,14 +20,11 @@ services:
       KAKAO_CLIENT_SECRET: ${KAKAO_CLIENT_SECRET}
     restart: unless-stopped
 
-  # ==============================
-  # Background Worker (Cron / Puppeteer)
-  # ==============================
   worker:
     build:
       context: .
       dockerfile: Dockerfile
-    command: ['pnpm', 'cron']
+      target: worker
     environment:
       DATABASE_URL: ${DATABASE_URL}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}

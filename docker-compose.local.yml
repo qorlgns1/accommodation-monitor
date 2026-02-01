@@ -1,9 +1,6 @@
 version: '3.8'
 
 services:
-  # ---------------------------------------------------
-  # Local Database (PostgreSQL)
-  # ---------------------------------------------------
   db:
     image: postgres:15-alpine
     container_name: accommodation-monitor-db-local
@@ -13,7 +10,6 @@ services:
       POSTGRES_DB: ${DB_NAME:-accommodation_monitor}
     ports:
       - '${DB_PORT:-5432}:5432'
-    # named volume 사용 → DB 자동 생성 / 재사용의 핵심
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
@@ -22,29 +18,19 @@ services:
       timeout: 5s
       retries: 5
 
-  # ---------------------------------------------------
-  # Next.js Web (Local Dev + Hot Reload)
-  # ---------------------------------------------------
   web:
     build:
       context: .
       dockerfile: Dockerfile
+      target: web
     container_name: accommodation-monitor-web-local
-    command: sh -c "pnpm db:generate && pnpm dev"
     ports:
       - '${WEB_PORT:-3000}:3000'
-    # 🔥 Hot Reload 핵심
-    volumes:
-      - ./:/app # 내 소스 코드를 컨테이너에 실시간 연결 (핵심)
-      - /app/node_modules # 의존성은 컨테이너 내부 환경 사용
-      - /app/.next # Next.js 빌드 캐시 격리
     environment:
-      CI: true
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
       NEXTAUTH_URL: ${NEXTAUTH_URL:-http://localhost:3000}
       NEXTAUTH_SECRET: ${NEXTAUTH_SECRET:-local_secret_key}
-      # OAuth
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
@@ -53,20 +39,13 @@ services:
       db:
         condition: service_healthy
 
-  # ---------------------------------------------------
-  # Background Worker (Local Test Only)
-  # ---------------------------------------------------
   worker:
     build:
       context: .
       dockerfile: Dockerfile
+      target: worker
     container_name: accommodation-monitor-worker-local
-    command: ['pnpm', 'cron']
-    volumes:
-      - .:/app
-      - /app/node_modules
     environment:
-      CI: true
       NODE_ENV: development
       DATABASE_URL: ${DATABASE_URL:-postgresql://postgres:postgres@db:5432/accommodation_monitor}
       KAKAO_CLIENT_ID: ${KAKAO_CLIENT_ID}
@@ -82,8 +61,5 @@ services:
       db:
         condition: service_healthy
 
-# ---------------------------------------------------
-# Volumes
-# ---------------------------------------------------
 volumes:
   postgres_data:

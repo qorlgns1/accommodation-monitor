@@ -1,7 +1,54 @@
 # ============================================
-# Stage 1: Base (공통 의존성)
+# Stage 1: Base
 # ============================================
 FROM node:24-slim AS base
+
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
+WORKDIR /app
+
+# ============================================
+# Stage 2: Builder
+# ============================================
+FROM base AS builder
+
+ARG NEXT_PUBLIC_GA_MEASUREMENT_ID
+ARG NEXT_PUBLIC_NAVER_SITE_VERIFICATION
+ARG NEXT_PUBLIC_GOOGLE_SITE_VERIFICATION
+
+COPY package.json pnpm-lock.yaml ./
+RUN pnpm install --frozen-lockfile
+COPY . .
+RUN pnpm prisma generate
+RUN pnpm build
+
+# ============================================
+# Stage 3: Web Runner
+# ============================================
+FROM node:24-slim AS web
+WORKDIR /app
+
+RUN apt-get update && apt-get install -y openssl && rm -rf /var/lib/apt/lists/*
+
+ENV NODE_ENV=production
+
+RUN addgroup --system --gid 1001 nodejs && \
+    adduser --system --uid 1001 nextjs
+
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
+
+USER nextjs
+EXPOSE 3000
+CMD ["node", "server.js"]
+
+# ============================================
+# Stage 4: Worker Runner
+# ============================================
+FROM node:24-slim AS worker
+WORKDIR /app
+
 RUN apt-get update && apt-get install -y \
     chromium \
     openssl ca-certificates fonts-liberation libasound2 libatk-bridge2.0-0 \
@@ -11,58 +58,16 @@ RUN apt-get update && apt-get install -y \
     libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 \
     libxss1 libxtst6 && rm -rf /var/lib/apt/lists/*
 
-RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
-WORKDIR /app
-
-# ============================================
-# Stage 2: Builder (빌드 및 ARG 주입)
-# ============================================
-FROM base AS builder
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-COPY . .
-RUN pnpm prisma generate
-RUN pnpm build
-
-# ============================================
-# ============================================
-# Stage 3: Runner (실행 단계)
-# ============================================
-FROM base AS runner
-WORKDIR /app
-
-ENV NODE_ENV=${NODE_ENV:-production}
+ENV NODE_ENV=production
 ENV PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
 ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
-# nextjs 유저 생성 및 홈 디렉토리 보장
-# --home /home/nextjs 옵션으로 실제 작업 공간을 만들어줍니다.
-RUN addgroup --system --gid 1001 nodejs && \
-    adduser --system --uid 1001 --home /home/nextjs nextjs
+RUN corepack enable && corepack prepare pnpm@10.28.0 --activate
 
-# Corepack 및 pnpm 캐시 경로를 홈 디렉토리 하위로 지정
-ENV COREPACK_HOME=/home/nextjs/.corepack
-ENV PNPM_HOME=/home/nextjs/.pnpm
-ENV PATH=$PNPM_HOME:$PATH
+COPY --from=builder /app/node_modules ./node_modules
+COPY --from=builder /app/src ./src
+COPY --from=builder /app/prisma ./prisma
+COPY --from=builder /app/package.json ./
+COPY --from=builder /app/tsconfig.json ./
 
-# 소유권 미리 설정 (필수!)
-# 앱 디렉토리(/app)와 유저 홈(/home/nextjs)의 주인은 nextjs 유저여야 합니다.
-RUN mkdir -p /home/nextjs/.corepack /home/nextjs/.pnpm && \
-    chown -R nextjs:nodejs /home/nextjs /app
-
-# [수정] public 복사 제외, static과 standalone만 복사
-COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
-COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
-
-# Worker 실행을 위한 최소한의 코드 (src는 워커 경로에 따라 필요 여부 결정)
-COPY --from=builder --chown=nextjs:nodejs /app/src ./src
-COPY --from=builder --chown=nextjs:nodejs /app/node_modules ./node_modules
-COPY --from=builder --chown=nextjs:nodejs /app/package.json ./package.json
-COPY --from=builder --chown=nextjs:nodejs /app/prisma ./prisma
-COPY --from=builder --chown=nextjs:nodejs /app/tsconfig.json ./tsconfig.json
-
-USER nextjs
-EXPOSE 3000
-CMD ["node", "server.js"]
+CMD ["pnpm", "cron"]
